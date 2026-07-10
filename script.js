@@ -1,108 +1,93 @@
-const monthField = document.getElementById("month");
-const yearField = document.getElementById("year");
-const categoryField = document.getElementById("category");
-const amountField = document.getElementById("amount");
-const addExpenseBtn = document.getElementById("addExpense");
+import * as Expense from './expense.js';
+import Chart from 'chart.js/auto';
 
-const currentYear = new Date().getFullYear();
-const currentMonth = new Date().toLocaleString('default', {month: "long"});
+const elements = {
+    monthSelect:    document.getElementById("month"),
+    yearSelect:     document.getElementById("year"),
+    categorySelect: document.getElementById("category"),
+    amountInput:    document.getElementById("amount"),
+    addBtn:         document.getElementById("addExpense"),
+    chart:          document.getElementById("expense-chart"),
+};
 
-const accountStorage = {
-    get(key) {
-        try{
-            const account = localStorage.getItem(key);
-            return account ? JSON.parse(account) : null;
-        } catch (err) {
-            console.error(`storage read failed: ${err}`);
-            this.remove(name);
-            return null;
-        }
-    },
-    save(key, account) {
-        try {
-            localStorage.setItem(key, JSON.stringify(account));
-            return true;
-        } catch (err) {
-            console.error(`storage write failed ${err}`);
-            return false;
-        }
-    },
-    remove(key) {
-        localStorage.removeItem(key);
-    }
-}
+const chart = {
+    active:     null,
+    categories: [...elements.categorySelect.children].map(x => x.value),
+};
 
-function getYearsSince(startYear, currentYear) {
-    const years = [];
-    for(let year = startYear; year <= currentYear; year++){
-        years.push(year);
-    }
-    return years;
-}
-
-function createYearElements() {
+(function load() {
     const startYear = 2010;
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().toLocaleString('default', {month: "long"});
+    createYearElements(startYear, currentYear);
+    elements.monthSelect.value = currentMonth;
+    elements.yearSelect.value = currentYear;
+    drawChart(chart.categories, currentMonth, currentYear);
+})()
+
+function drawChart(categories, month, year) {
+    if (chart.active) {
+        chart.active.destroy();
+    }
+    const expenses = Expense.getMonthly(categories, month, year);
+    chart.active = new Chart(elements.chart, {
+        type: "pie",
+        data: {
+            labels: expenses.map(expense=>expense.category),
+            datasets: [
+                {
+                    label: "Expenses",
+                    data: expenses.map(expense=>expense.value)
+                }
+            ]
+        },
+    });   
+}
+
+function createYearElements(startYear, currentYear) {
     const yearElements = [];
-    const years = getYearsSince(startYear, currentYear);
-    
-    years.forEach(year => {
+    for(let year = startYear; year <= currentYear; year++){
         const option = document.createElement("option");
         option.value = year;
-        option.appendChild(document.createTextNode(year));
+        option.textContent = year;
         yearElements.unshift(option);
-    });
-    yearField.append(...yearElements);
+    }
+    try {
+        elements.yearSelect.append(...yearElements);
+    } catch (err) {
+        console.error(err);
+        return;
+    }
 }
 
-function autoSetDateFields() {
-    monthField.value = currentMonth;
-    yearField.value = currentYear;
-}
+function handleFormSubmit(event) {
+    event.preventDefault();
+    const { monthSelect, yearSelect, categorySelect, amountInput } = elements;
 
-function addExpense(e) {
-    e.preventDefault();
-
-    if (amountField.value.trim() === "") {
+    if (amountInput.value === "") {
         alert("Amount input cannot be empty");
-        categoryField.value = "";
+        categorySelect.value = "";
         return;
     }
 
-    const key = `${categoryField.value}-${monthField.value}-${yearField.value}`;
-
-    let value = Number(amountField.value);
-    if (Number.isNaN(value)){
+    let amount = Number(amountInput.value);
+    if (Number.isNaN(amount)){
         alert("Amount input is invalid.");
-        categoryField.value = "";
-        amountField.value = "";
+        categorySelect.value = "";
+        amountInput.value = "";
         return;
     }
-
-    let account = accountStorage.get(key);
-    if (account === null) {
-        account = {
-             name: categoryField.value, 
-             month: monthField.value, 
-             year: yearField.value,
-             value: value < 0 ? 0 : value,
-         }; 
-    } else {
-        if (account.value + value < 0) {
-            alert("Expense can't be below 0");
-            categoryField.value = "";
-            amountField.value = "";
-            return;
-        }
-        account.value += value;
-     }
-
-     if (!accountStorage.save(key, account)){
-         alert("Couldn't save expense.");
-     }
-     categoryField.value = "";
-     amountField.value = "";
+    
+    try {
+        const err = Expense.add(categorySelect.value, monthSelect.value, yearSelect.value, amount);
+        err != null ? alert(err.message) : drawChart(chart.categories, monthSelect.value, yearSelect.value);
+    } catch (err) {
+        console.error(err);
+    }
+    
+    categorySelect.value = "";
+    amountInput.value = "";
 }
 
-createYearElements();
-autoSetDateFields();
-addExpenseBtn.addEventListener("click", addExpense);
+elements.addBtn.addEventListener("click", handleFormSubmit);
+window.addEventListener("resize", () => chart.active.resize());

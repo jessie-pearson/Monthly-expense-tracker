@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name=""viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Monthly expense tracker</title>
         <!-- Google font -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,17 +56,17 @@
                         
                         <fieldset>
                             <label for="amount">Amount</label>
-                            <input type=""number id="amount" name="amount" class="input-bar" placeholder="Enter amount" required>
+                            <input type="number" id="amount" name="amount" class="input-bar" placeholder="Enter amount" required>
                         </fieldset>
                     </div>
         
                     <button id="addExpense">Add expense</button>
                 </form>
-                <section>
+                <section class="chart">
                     <canvas id="expense-chart"></canvas>
                 </section>
             </div>
         </main>
-        <script src="script.js"></script>
+        <script type="module" src="script.js"></script>
     </body>
 </html>
