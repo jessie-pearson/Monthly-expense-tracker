@@ -4,12 +4,12 @@ export function add(category, month, year, amount) {
     const expense = getExpense(key) ?? {category, month, year, value: 0};
 
     if (expense.value + amount < 0) {
-        return new Error("Expense can't be below 0");
+        return [{}, new Error("Expense can't be below 0")];
     } 
     expense.value += amount;
 
     localStorage.setItem(key, JSON.stringify(expense));
-    return null;
+    return [expense, null];
 }
 
 export function getMonthly(categories, month, year) {

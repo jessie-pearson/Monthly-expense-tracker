@@ -1,5 +1,5 @@
 import * as Expense from './expense.js';
-import { resizeChart } from "./expense-chart.js"
+import { drawChart, resizeChart, updateChart } from "./expense-chart.js"
 
 const elements = {
     monthSelect     :document.getElementById("month"),
@@ -7,9 +7,10 @@ const elements = {
     categorySelect  :document.getElementById("category"),
     amountInput     :document.getElementById("amount"),
     addBtn          :document.getElementById("addExpense"),
-    
 };
 
+let chartMonth;
+let chartYear;
 const categories = [...elements.categorySelect.children].map(x => x.value);
 
 (function load() {
@@ -19,6 +20,8 @@ const categories = [...elements.categorySelect.children].map(x => x.value);
     createYearElements(startYear, currentYear);
     elements.monthSelect.value = currentMonth;
     elements.yearSelect.value = currentYear;
+    chartMonth = currentMonth;
+    chartYear = currentYear;
     drawChart(categories, currentMonth, currentYear);
 })()
 
@@ -57,8 +60,19 @@ function handleFormSubmit(event) {
     }
     
     try {
-        const err = Expense.add(categorySelect.value, monthSelect.value, yearSelect.value, amount);
-        err != null ? alert(err.message) : drawChart(categories, monthSelect.value, yearSelect.value);
+        const [expense, err] = Expense.add(categorySelect.value, monthSelect.value, yearSelect.value, amount);
+        if (err != null){
+            alert(err.message)
+        } else if (chartMonth != monthSelect.value || chartYear != yearSelect.value){
+            chartMonth = monthSelect.value;
+            chartYear = yearSelect.value;
+            drawChart(categories, monthSelect.value, yearSelect.value);
+        } else{
+            const err = updateChart(expense.category, expense.value);
+            if (err != null) {
+                drawChart(categories, monthSelect.value, yearSelect.value);
+            }
+        } 
     } catch (err) {
         console.error(err);
     }
