@@ -34,13 +34,16 @@ export function updateChart(category, amount) {
 	}
 
 	const i = chart.data.labels.indexOf(category);
-	if (i === -1) {
+	if (i === -1 && amount > 0) {
 		chart.data.labels.push(category);
 		chart.data.datasets[0].data.push(amount);
-	} else {
+	} else if (amount > 0) {
 		chart.data.datasets[0].data[i] = amount;
+	} else {
+		chart.data.labels.splice(i, 1);
+		chart.data.datasets[0].data.splice(i, 1);
 	}
-	
+
 	chart.update();
 	return null;
 }
